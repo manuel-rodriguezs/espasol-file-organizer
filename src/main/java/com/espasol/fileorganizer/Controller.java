@@ -4,9 +4,12 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Control;
+import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Window;
@@ -25,28 +28,42 @@ public class Controller {
     @FXML
     Button btnOrigen, btnDestino, btnBuscar;
 
+    @FXML
+    ListView<String> listaEncontrados;
+
     List<Control> controlsForDisable;
 
     @FXML
     protected void selectOriginPath(ActionEvent event) {
-        setDirectoryText(getDirectory(event), originField);
+        Optional<File> directory = getDirectoryFromdialog(event);
+        setDirectoryText(directory, originField);
     }
 
     @FXML
     protected void selectDestPath(ActionEvent event) {
-        setDirectoryText(getDirectory(event), destField);
+        Optional<File> directory = getDirectoryFromdialog(event);
+        setDirectoryText(directory, destField);
     }
 
     @FXML
-    protected void find() {
+    protected void find(ActionEvent event) {
         disableFrom();
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(1), event -> enableFrom()));
+        listaEncontrados.getItems().clear();
+        Scene scene = getSceneFromEvent(event);
+        scene.setCursor(Cursor.WAIT);
+        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), eventHandler -> {
+            for (int i = 0; i < 100; i++) {
+                listaEncontrados.getItems().add("elemento con texto bastante lagro lorem ipsum dolor " + i);
+            }
+            enableFrom();
+            scene.setCursor(Cursor.DEFAULT);
+        }));
         timeline.setCycleCount(1);
         timeline.play();
     }
 
-    private Optional<File> getDirectory(ActionEvent event) {
-        Window window = getWindowFromEvent(event);
+    private Optional<File> getDirectoryFromdialog(ActionEvent event) {
+        Window window = getSceneFromEvent(event).getWindow();
         DirectoryChooser chooser = new DirectoryChooser();
         File file = chooser.showDialog(window);
         if (file == null) {
@@ -56,9 +73,9 @@ public class Controller {
         }
     }
 
-    private Window getWindowFromEvent(ActionEvent event) {
+    private Scene getSceneFromEvent(ActionEvent event) {
         Node source = (Node) event.getSource();
-        return source.getScene().getWindow();
+        return source.getScene();
     }
 
     private void setDirectoryText(Optional<File> directory, TextField field) {
