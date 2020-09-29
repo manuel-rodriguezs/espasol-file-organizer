@@ -81,14 +81,14 @@ public class Controller {
     }
 
     private void inicializeControlsForDisable() {
-        controlsForDisable = asList(filterField, originField, destField, btnOrigen, btnDestino, btnBuscar);
+        controlsForDisable = asList(filterField, btnOrigen, btnDestino, btnBuscar);
     }
 
-    private void disableControl(Control c) {
-        c.setDisable(true);
+    private void disableControl(Control control) {
+        control.setDisable(true);
     }
 
-    private void enableControl(Control c) {
-        c.setDisable(false);
+    private void enableControl(Control control) {
+        control.setDisable(false);
     }
 }
