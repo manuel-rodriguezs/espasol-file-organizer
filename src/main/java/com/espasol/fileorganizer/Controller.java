@@ -3,7 +3,6 @@ package com.espasol.fileorganizer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
@@ -71,16 +70,16 @@ public class Controller {
     }
 
     private void disableFrom() {
-        inicializeControlsForDisable();
+        initializeControlsForDisable();
         controlsForDisable.forEach(this::disableControl);
     }
 
     private void enableFrom() {
-        inicializeControlsForDisable();
+        initializeControlsForDisable();
         controlsForDisable.forEach(this::enableControl);
     }
 
-    private void inicializeControlsForDisable() {
+    private void initializeControlsForDisable() {
         controlsForDisable = asList(filterField, btnOrigen, btnDestino, btnBuscar);
     }
 
