@@ -1,68 +1,89 @@
 package com.espasol.fileorganizer;
 
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
+import com.espasol.fileorganizer.beans.SearchOriginCriteria;
+import javafx.collections.FXCollections;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.Control;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Window;
-import javafx.util.Duration;
 
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 public class Controller {
     @FXML
     TextField filterField, originField, destField;
 
     @FXML
-    Button btnOrigen, btnDestino, btnBuscar;
+    Button btnOrigin, btnDestination, btnFind;
 
     @FXML
-    ListView<String> listaEncontrados;
+    ListView<String> foundDirectories;
 
-    List<Control> controlsForDisable;
+    List<Control> activatableControls;
+
+    Service service = new Service();
 
     @FXML
     protected void selectOriginPath(ActionEvent event) {
-        Optional<File> directory = getDirectoryFromdialog(event);
-        setDirectoryText(directory, originField);
+        Optional<File> directory = getDirectoryFromDialog(event);
+        if (directory.isPresent()) {
+            originField.setText(directory.get().toString());
+        } else {
+            originField.setText("");
+        }
+        endableOrDisableFindButton();
     }
 
     @FXML
     protected void selectDestPath(ActionEvent event) {
-        Optional<File> directory = getDirectoryFromdialog(event);
-        setDirectoryText(directory, destField);
+        Optional<File> directory = getDirectoryFromDialog(event);
+        if (directory.isPresent()) {
+            destField.setText(directory.get().toString());
+        } else {
+            destField.setText("");
+        }
     }
 
     @FXML
     protected void find(ActionEvent event) {
-        disableFrom();
-        listaEncontrados.getItems().clear();
-        Scene scene = getSceneFromEvent(event);
-        scene.setCursor(Cursor.WAIT);
-        Timeline timeline = new Timeline(new KeyFrame(Duration.seconds(2), eventHandler -> {
-            for (int i = 0; i < 100; i++) {
-                listaEncontrados.getItems().add("elemento con texto bastante lagro lorem ipsum dolor " + i);
-            }
-            enableFrom();
-            scene.setCursor(Cursor.DEFAULT);
-        }));
-        timeline.setCycleCount(1);
-        timeline.play();
+        new TaskLauncher()
+                .onBefore(() -> {
+                    disableForm(event);
+                    foundDirectories.getItems().clear();
+                })
+                .withTask(new Task<List<String>>() {
+                    @Override
+                    protected List<String> call() {
+                        return service.findDirectoriesToMove(SearchOriginCriteria.builder()
+                                .originPath(originField.getText())
+                                .filter(filterField.getText())
+                                .build());
+                    }
+
+                    @Override
+                    protected void succeeded() {
+                        super.succeeded();
+                        List<String> cleanedListOfDirectoriesToMove = getValue().stream().map(
+                                dir -> dir.replace(originField.getText(), "")
+                        ).collect(toList());
+                        foundDirectories.setItems(FXCollections.observableArrayList(cleanedListOfDirectoriesToMove));
+                        enableForm(event);
+                    }
+                })
+                .start();
     }
 
-    private Optional<File> getDirectoryFromdialog(ActionEvent event) {
+    private Optional<File> getDirectoryFromDialog(ActionEvent event) {
         Window window = getSceneFromEvent(event).getWindow();
         DirectoryChooser chooser = new DirectoryChooser();
         File file = chooser.showDialog(window);
@@ -78,26 +99,26 @@ public class Controller {
         return source.getScene();
     }
 
-    private void setDirectoryText(Optional<File> directory, TextField field) {
-        if (directory.isPresent()) {
-            field.setText(directory.get().toString());
-        } else {
-            field.setText("");
+    private void endableOrDisableFindButton() {
+        boolean disableFindButton = originField.getText().length() == 0;
+        btnFind.setDisable(disableFindButton);
+    }
+
+    private void disableForm(ActionEvent event) {
+        getSceneFromEvent(event).setCursor(Cursor.WAIT);
+        getActivatableControls().forEach(this::disableControl);
+    }
+
+    private void enableForm(ActionEvent event) {
+        getSceneFromEvent(event).setCursor(Cursor.DEFAULT);
+        getActivatableControls().forEach(this::enableControl);
+    }
+
+    private List<Control> getActivatableControls() {
+        if (activatableControls == null) {
+            activatableControls = asList(filterField, btnOrigin, btnDestination, btnFind);
         }
-    }
-
-    private void disableFrom() {
-        initializeControlsForDisable();
-        controlsForDisable.forEach(this::disableControl);
-    }
-
-    private void enableFrom() {
-        initializeControlsForDisable();
-        controlsForDisable.forEach(this::enableControl);
-    }
-
-    private void initializeControlsForDisable() {
-        controlsForDisable = asList(filterField, btnOrigen, btnDestino, btnBuscar);
+        return activatableControls;
     }
 
     private void disableControl(Control control) {
@@ -106,5 +127,13 @@ public class Controller {
 
     private void enableControl(Control control) {
         control.setDisable(false);
+    }
+
+    private void showErrorMessage(String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Ocurrió un error");
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }
