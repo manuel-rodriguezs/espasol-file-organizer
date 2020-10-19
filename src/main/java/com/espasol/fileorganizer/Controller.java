@@ -1,5 +1,6 @@
 package com.espasol.fileorganizer;
 
+import com.espasol.fileorganizer.beans.MoveOrder;
 import com.espasol.fileorganizer.beans.SearchOriginCriteria;
 import javafx.collections.FXCollections;
 import javafx.concurrent.Task;
@@ -24,10 +25,10 @@ public class Controller {
     TextField filterField, originField, destField;
 
     @FXML
-    Button btnOrigin, btnDestination, btnFind;
+    Button btnOrigin, btnDestination, btnFind, btnMove;
 
     @FXML
-    ListView<String> foundDirectories;
+    ListView<String> foundDirectories, movedDirectories;
 
     List<Control> activatableControls;
 
@@ -41,7 +42,10 @@ public class Controller {
         } else {
             originField.setText("");
         }
-        endableOrDisableFindButton();
+        enableOrDisableFindButton();
+        foundDirectories.getItems().clear();
+        movedDirectories.getItems().clear();
+        enableOrDisableMoveButton();
     }
 
     @FXML
@@ -52,34 +56,75 @@ public class Controller {
         } else {
             destField.setText("");
         }
+        movedDirectories.getItems().clear();
+        enableOrDisableMoveButton();
     }
 
     @FXML
     protected void find(ActionEvent event) {
+        Task<List<String>> task = new Task<>() {
+            @Override
+            protected List<String> call() {
+                return service.findDirectoriesToMove(SearchOriginCriteria.builder()
+                        .originPath(originField.getText())
+                        .filter(filterField.getText())
+                        .build());
+            }
+        };
+        task.setOnFailed(evt -> {
+            enableForm(event);
+            showErrorMessage("Error buscando en directorios", task.getException().getMessage());
+        });
+        task.setOnSucceeded(evt -> {
+            List<String> cleanedListOfDirectoriesToMove = task.getValue().stream().map(
+                    dir -> dir.replace(originField.getText(), "")
+            ).collect(toList());
+            foundDirectories.setItems(FXCollections.observableArrayList(cleanedListOfDirectoriesToMove));
+            enableForm(event);
+            enableOrDisableMoveButton();
+        });
         new TaskLauncher()
                 .onBefore(() -> {
                     disableForm(event);
                     foundDirectories.getItems().clear();
+                    enableOrDisableMoveButton();
+                    enableOrDisableFindButton();
                 })
-                .withTask(new Task<List<String>>() {
-                    @Override
-                    protected List<String> call() {
-                        return service.findDirectoriesToMove(SearchOriginCriteria.builder()
-                                .originPath(originField.getText())
-                                .filter(filterField.getText())
-                                .build());
-                    }
+                .withTask(task)
+                .start();
+    }
 
-                    @Override
-                    protected void succeeded() {
-                        super.succeeded();
-                        List<String> cleanedListOfDirectoriesToMove = getValue().stream().map(
-                                dir -> dir.replace(originField.getText(), "")
-                        ).collect(toList());
-                        foundDirectories.setItems(FXCollections.observableArrayList(cleanedListOfDirectoriesToMove));
-                        enableForm(event);
-                    }
+    @FXML
+    protected void move(ActionEvent event) {
+        Task<Object> task = new Task<>() {
+            @Override
+            protected Object call() throws Exception {
+                service.moveDirs(MoveOrder.builder()
+                        .originPath(originField.getText())
+                        .dirsToMove(foundDirectories.getItems())
+                        .destinationPath(destField.getText())
+                        .build()
+                );
+                return new Object();
+            }
+        };
+        task.setOnFailed(evt -> {
+            enableForm(event);
+            showErrorMessage("Error moviendo directorios", task.getException().getMessage());
+        });
+        task.setOnSucceeded(evt -> {
+            enableForm(event);
+            foundDirectories.getItems().clear();
+            enableOrDisableMoveButton();
+            enableOrDisableFindButton();
+            showInfoMessage("¡Todo OK!", "Directorios movidos", null);
+        });
+        new TaskLauncher()
+                .onBefore(() -> {
+                    disableForm(event);
+                    movedDirectories.getItems().clear();
                 })
+                .withTask(task)
                 .start();
     }
 
@@ -99,9 +144,14 @@ public class Controller {
         return source.getScene();
     }
 
-    private void endableOrDisableFindButton() {
+    private void enableOrDisableFindButton() {
         boolean disableFindButton = originField.getText().length() == 0;
         btnFind.setDisable(disableFindButton);
+    }
+
+    private void enableOrDisableMoveButton() {
+        boolean disableMoveButton = (destField.getText().length() == 0) || (foundDirectories.getItems().size() == 0);
+        btnMove.setDisable(disableMoveButton);
     }
 
     private void disableForm(ActionEvent event) {
@@ -132,6 +182,14 @@ public class Controller {
     private void showErrorMessage(String header, String content) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Ocurrió un error");
+        alert.setHeaderText(header);
+        alert.setContentText(content);
+        alert.showAndWait();
+    }
+
+    private void showInfoMessage(String title, String header, String content) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);
         alert.showAndWait();

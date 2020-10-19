@@ -1,6 +1,9 @@
 package com.espasol.fileorganizer;
 
+import com.espasol.fileorganizer.beans.MoveFromToInfo;
+import com.espasol.fileorganizer.beans.MoveOrder;
 import com.espasol.fileorganizer.beans.SearchOriginCriteria;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +24,12 @@ public class Service {
         return opDirs
                 .map(files -> files.stream().map(File::getAbsolutePath).collect(toList()))
                 .orElseGet(ArrayList::new);
+    }
+
+    public void moveDirs(MoveOrder moveOrder) throws Exception {
+        for (MoveFromToInfo moveFromToInfo : moveOrder.getMoveFromToInfos()) {
+            FileUtils.moveDirectory(moveFromToInfo.getFrom(), moveFromToInfo.getTo());
+        }
     }
 
     private Optional<List<File>> searchDirectoriesWithCriteria(SearchOriginCriteria searchOriginCriteria) {
