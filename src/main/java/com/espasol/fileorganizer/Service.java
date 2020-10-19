@@ -35,7 +35,6 @@ public class Service {
             if (movedDirEvent != null) {
                 movedDirEvent.handle(moveFromToOrder.getDir());
             }
-            Thread.sleep(1000);
         }
     }
 
@@ -55,11 +54,6 @@ public class Service {
     }
 
     private List<File> getFilteredDirs(List<File> dirs, String filter) {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         return dirs.stream()
                 .filter(dir -> isThereFileNameFilterRecursively(filter, dir))
                 .collect(toList());
