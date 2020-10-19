@@ -3,6 +3,7 @@ package com.espasol.fileorganizer;
 import com.espasol.fileorganizer.beans.MoveFromToOrder;
 import com.espasol.fileorganizer.beans.MoveOrder;
 import com.espasol.fileorganizer.beans.SearchOriginCriteria;
+import com.espasol.fileorganizer.tasks.MovedDirEvent;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -19,6 +20,8 @@ import static java.util.stream.Collectors.toList;
 
 public class Service {
 
+    MovedDirEvent movedDirEvent;
+
     public List<String> findDirectoriesToMove(SearchOriginCriteria searchOriginCriteria) {
         Optional<List<File>> opDirs = searchDirectoriesWithCriteria(searchOriginCriteria);
         return opDirs
@@ -29,7 +32,15 @@ public class Service {
     public void moveDirs(MoveOrder moveOrder) throws Exception {
         for (MoveFromToOrder moveFromToOrder : moveOrder.getMoveFromToOrders()) {
             FileUtils.moveDirectory(moveFromToOrder.getFrom(), moveFromToOrder.getTo());
+            if (movedDirEvent != null) {
+                movedDirEvent.handle(moveFromToOrder.getDir());
+            }
+            Thread.sleep(1000);
         }
+    }
+
+    public void setMovedDirListener(MovedDirEvent event) {
+        movedDirEvent = event;
     }
 
     private Optional<List<File>> searchDirectoriesWithCriteria(SearchOriginCriteria searchOriginCriteria) {
@@ -44,6 +55,11 @@ public class Service {
     }
 
     private List<File> getFilteredDirs(List<File> dirs, String filter) {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         return dirs.stream()
                 .filter(dir -> isThereFileNameFilterRecursively(filter, dir))
                 .collect(toList());

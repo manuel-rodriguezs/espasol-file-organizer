@@ -18,6 +18,7 @@ public class MoveOrder {
     public List<MoveFromToOrder> getMoveFromToOrders() {
         return dirsToMove.stream().map(dir ->
                 MoveFromToOrder.builder()
+                        .dir(dir)
                         .from(new File(originPath + dir))
                         .to(new File(destinationPath + dir))
                         .build()

@@ -4,6 +4,7 @@ import com.espasol.fileorganizer.beans.MoveOrder;
 import com.espasol.fileorganizer.beans.SearchOriginCriteria;
 import com.espasol.fileorganizer.tasks.FindTask;
 import com.espasol.fileorganizer.tasks.MoveTask;
+import com.espasol.fileorganizer.tasks.MovedDirEvent;
 import com.espasol.fileorganizer.tasks.Task;
 import javafx.collections.FXCollections;
 import javafx.concurrent.WorkerStateEvent;
@@ -71,7 +72,7 @@ public class Controller {
         task.run(findCallableMethod());
         task.setOnBeforeStart(findOnBefore(event));
         task.setOnSucceeded(findOnSuccess(event, task));
-        task.setOnFailed(taskOnFail(event, "Error buscando en directorios", task));
+        task.setOnFailed(taskOnFail(event, "Error buscando en carpetas", task));
         task.start();
     }
 
@@ -86,8 +87,7 @@ public class Controller {
         return () -> {
             disableForm(event);
             foundDirectories.getItems().clear();
-            enableOrDisableMoveButton();
-            enableOrDisableFindButton();
+            movedDirectories.getItems().clear();
         };
     }
 
@@ -98,6 +98,7 @@ public class Controller {
             ).collect(toList());
             foundDirectories.setItems(FXCollections.observableArrayList(cleanedListOfDirectoriesToMove));
             enableForm(event);
+            enableOrDisableFindButton();
             enableOrDisableMoveButton();
         };
     }
@@ -108,7 +109,8 @@ public class Controller {
         task.run(moveCallableMethod());
         task.setOnBeforeStart(moveOnBefore(event, movedDirectories));
         task.setOnSucceeded(moveOnSuccess(event));
-        task.setOnFailed(taskOnFail(event, "Error moviendo directorios", task));
+        task.setOnFailed(taskOnFail(event, "Error moviendo carpetas", task));
+        task.setOnMovedDirEvent(getMovedDirEvent(), service);
         task.start();
     }
 
@@ -120,8 +122,6 @@ public class Controller {
                     .destinationPath(destField.getText())
                     .build()
             );
-            movedDirectories.getItems().addAll(foundDirectories.getItems());
-            foundDirectories.getItems().clear();
             return new Object();
         };
     }
@@ -130,8 +130,6 @@ public class Controller {
         return () -> {
             disableForm(event);
             movedDirectories.getItems().clear();
-            enableOrDisableMoveButton();
-            enableOrDisableFindButton();
         };
     }
 
@@ -140,7 +138,14 @@ public class Controller {
             enableForm(event);
             enableOrDisableMoveButton();
             enableOrDisableFindButton();
-            showInfoMessage("¡Todo OK!", "Directorios movidos", null);
+            showMessage(Alert.AlertType.INFORMATION, "¡Todo OK!", "Carpetas movidas", null);
+        };
+    }
+
+    private MovedDirEvent getMovedDirEvent() {
+        return dir -> {
+            movedDirectories.getItems().add(dir);
+            foundDirectories.getItems().remove(dir);
         };
     }
 
@@ -189,7 +194,7 @@ public class Controller {
 
     private List<Control> getActivatableControls() {
         if (activatableControls == null) {
-            activatableControls = asList(filterField, btnOrigin, btnDestination, btnFind);
+            activatableControls = asList(filterField, btnOrigin, btnDestination, btnFind, btnMove);
         }
         return activatableControls;
     }
@@ -203,15 +208,11 @@ public class Controller {
     }
 
     private void showErrorMessage(String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Ocurrió un error");
-        alert.setHeaderText(header);
-        alert.setContentText(content);
-        alert.showAndWait();
+        showMessage(Alert.AlertType.ERROR, "Ocurrió un error", header, content);
     }
 
-    private void showInfoMessage(String title, String header, String content) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+    private void showMessage(Alert.AlertType type, String title, String header, String content) {
+        Alert alert = new Alert(type);
         alert.setTitle(title);
         alert.setHeaderText(header);
         alert.setContentText(content);

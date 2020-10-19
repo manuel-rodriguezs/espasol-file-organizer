@@ -8,6 +8,7 @@ import java.io.File;
 @Value
 @Builder
 public class MoveFromToOrder {
+    String dir;
     File from;
     File to;
 }
