@@ -7,7 +7,7 @@ import java.io.File;
 
 @Value
 @Builder
-public class MoveFromToInfo {
+public class MoveFromToOrder {
     File from;
     File to;
 }

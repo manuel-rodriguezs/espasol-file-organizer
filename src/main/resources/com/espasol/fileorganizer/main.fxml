@@ -70,6 +70,11 @@
                 <Insets top="10.0" />
             </GridPane.margin>
         </Label>
+        <Label layoutX="106.0" layoutY="191.0" text="Carpetas movidas:" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <GridPane.margin>
+                <Insets top="10.0" />
+            </GridPane.margin>
+        </Label>
         <ListView fx:id="foundDirectories" minHeight="200.0" prefWidth="284.0" GridPane.columnIndex="0" GridPane.rowIndex="2" />
         <ListView fx:id="movedDirectories" minHeight="200.0" prefWidth="284.0" GridPane.columnIndex="1" GridPane.rowIndex="2" />
         <columnConstraints>

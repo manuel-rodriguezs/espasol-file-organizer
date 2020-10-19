@@ -1,20 +1,12 @@
-package com.espasol.fileorganizer;
+package com.espasol.fileorganizer.tasks;
 
 import javafx.concurrent.Task;
+import lombok.Builder;
 
+@Builder
 public class TaskLauncher {
     Task task;
     Runnable beforeMethod;
-
-    public TaskLauncher onBefore(Runnable beforeMethod) {
-        this.beforeMethod = beforeMethod;
-        return this;
-    }
-
-    public TaskLauncher withTask(Task task) {
-        this.task = task;
-        return this;
-    }
 
     public Thread start() {
         if (beforeMethod != null) {

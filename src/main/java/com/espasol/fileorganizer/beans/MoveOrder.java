@@ -15,9 +15,9 @@ public class MoveOrder {
     String originPath;
     String destinationPath;
 
-    public List<MoveFromToInfo> getMoveFromToInfos() {
+    public List<MoveFromToOrder> getMoveFromToOrders() {
         return dirsToMove.stream().map(dir ->
-                MoveFromToInfo.builder()
+                MoveFromToOrder.builder()
                         .from(new File(originPath + dir))
                         .to(new File(destinationPath + dir))
                         .build()

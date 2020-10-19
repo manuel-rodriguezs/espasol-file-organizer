@@ -1,6 +1,6 @@
 package com.espasol.fileorganizer;
 
-import com.espasol.fileorganizer.beans.MoveFromToInfo;
+import com.espasol.fileorganizer.beans.MoveFromToOrder;
 import com.espasol.fileorganizer.beans.MoveOrder;
 import com.espasol.fileorganizer.beans.SearchOriginCriteria;
 import org.apache.commons.io.FileUtils;
@@ -27,8 +27,8 @@ public class Service {
     }
 
     public void moveDirs(MoveOrder moveOrder) throws Exception {
-        for (MoveFromToInfo moveFromToInfo : moveOrder.getMoveFromToInfos()) {
-            FileUtils.moveDirectory(moveFromToInfo.getFrom(), moveFromToInfo.getTo());
+        for (MoveFromToOrder moveFromToOrder : moveOrder.getMoveFromToOrders()) {
+            FileUtils.moveDirectory(moveFromToOrder.getFrom(), moveFromToOrder.getTo());
         }
     }
 
